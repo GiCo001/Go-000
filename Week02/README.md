@@ -25,8 +25,7 @@ func (e *MyError) New(code int,msg string,err error) *MyError {
 ```
 
 2. 存储层
-
-   ```go
+```go
    type Repositry struct{
        db *sql.DB
        ....
@@ -43,13 +42,13 @@ func (e *MyError) New(code int,msg string,err error) *MyError {
        }
        return bean,nil
    }
-   ```
+```
 
    
 
 3. 业务层 service
 
-   ```go
+```go
    type MyService struct{
        repositry *Repositry
    }
@@ -66,7 +65,7 @@ func (e *MyError) New(code int,msg string,err error) *MyError {
        }
        ......
    }
-   ```
+```
 
    
 
