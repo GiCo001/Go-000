@@ -1,8 +1,96 @@
 # 作业
+
 > 1. 我们在数据库操作的时候，比如 dao 层中当遇到一个 sql.ErrNoRows 的时候，是否应该 Wrap 这个 error，抛给上层。为什么，应该怎么做请写出代码？
+
+##### 应该根据不同的业务 进行处理  可以通过自定义Error 包装对应的业务Code 对sql.ErrNoRows进行处理 ，并携带对应的业务Code 抛给对应的调用方处理 具体如下伪代码
+
+### 伪代码
+
+1. 自定义MyError
+
+```go
+type MyError struct{
+    Code int  `json:"code"`
+    Msg string `json:msg`
+    Err error
+}
+
+func (e *MyError) Error() string {
+	return fmt.Sprintf("error: code = %d desc = %s details = %+v", e.Code, e.Msg)
+}
+
+func (e *MyError) New(code int,msg string,err error) *MyError {
+    return &{Code:code,Msg:msg,Err:err}
+}
+```
+
+2. 存储层
+
+   ```go
+   type Repositry struct{
+       db *sql.DB
+       ....
+   }
+   
+   func(r *Repositry) findOne() *bean,*MyError{
+       var bean *bean
+       err:=r.db.QueryRow(sql).Scan(&bean)
+       if err!=nil{
+           if err == sql.ErroNowRows{
+              return _ ,MyError.New(404,"not found",nil)
+           }
+           return _,MyError.New(500,"not found",err) 
+       }
+       return bean,nil
+   }
+   ```
+
+   
+
+3. 业务层 service
+
+   ```go
+   type MyService struct{
+       repositry *Repositry
+   }
+   
+   func(s *MyService) DoFind() error {
+       bean,myError:=s.repositry.findOne()
+       if myError!=nil{
+           if myError.Code!=404{
+               return errors.Wrap(myError,"xxxxx")
+           }
+       }
+       if myError.Code ==404{
+           // do not found 
+       }
+       ......
+   }
+   ```
+
+   
+
+4. Api层
+
+```go
+type Api struct{
+    service *MyService
+}
+
+func requestDoFind(){
+    err:= service.DoFind()
+    if err!=nil{
+        log.Printf("%+w",err)
+        return
+    }
+    // do somting
+}
+```
+
 
 
 # 总结
+
 ### Error
 - 不同于其他语言的exception是一个interface 对象
 - errors.New()返回一个内部errorString对象指针（避免等值对比数据串了）
